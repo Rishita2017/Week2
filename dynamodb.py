@@ -96,3 +96,28 @@ def delete_underrated_book(title, category, rating):
                 raise
         else:
             return response
+
+   def increase_rating( self, category, title, rating_increase):
+        response = client_dynamodb.update_item(
+            TableName='TableOfBooks',
+            Key={
+                'category': {
+                    'S': category,
+                },
+                'title': {
+                    'S': title,
+                }
+            },
+            ExpressionAttributeNames={
+                '#R': 'rating'
+            },
+            ExpressionAttributeValues={
+                ':r': {
+                    'N': rating_increase,
+                }
+            },
+            UpdateExpression='SET #R = #R + :r',
+            ReturnValues="UPDATED_NEW"
+        )
+        return response
+        
