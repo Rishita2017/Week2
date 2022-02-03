@@ -6,6 +6,7 @@ with open('template.yaml', 'r') as cf_file:
     cft_template = cf_file.read()
 stack_obj = Stack("myfirstdynamodbtable",cft_template,"ap-south-1")
 stack_obj.create_stack()
+stack_obj.update_stack()
 
 book = Book()
 book_resp = book.put_item("Fantasy","The Fifth season","English","2015")
