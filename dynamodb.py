@@ -97,7 +97,7 @@ def delete_underrated_book(title, category, rating):
         else:
             return response
 
-   def increase_rating( self, category, title, rating_increase):
+def increase_rating(category, title, rating_increase):
         response = client_dynamodb.update_item(
             TableName='TableOfBooks',
             Key={
@@ -119,5 +119,5 @@ def delete_underrated_book(title, category, rating):
             UpdateExpression='SET #R = #R + :r',
             ReturnValues="UPDATED_NEW"
         )
+        print("rating increased")
         return response
-        
