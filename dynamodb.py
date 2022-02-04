@@ -28,7 +28,7 @@ class Book:
         return response
 
 
-    def get_item( self, category, title):
+    def get_item(self, category, title):
         try:
             response = client_dynamodb.get_item(
                 TableName='Books',
@@ -70,54 +70,55 @@ class Book:
         return response
 
 
-def delete_underrated_book(title, category, rating):
-        try:
-            response = client_dynamodb.delete_item(
+    def delete_underrated_book(self, title, category, rating):
+            try:
+                response = client_dynamodb.delete_item(
+                    TableName='TableOfBooks',
+                    Key={
+                        'category': {
+                            'N': "{}".format(category),
+                        },
+                        'title': {
+                            'S': "{}".format(title),
+                        }
+                    },
+                    ConditionExpression="rating <= :a",
+                    ExpressionAttributeValues={
+                        ':a': {
+                            'N': "{}".format(rating),
+                        }
+                    }
+                )
+            except ClientError as e:
+                if e.response['Error']['Code'] == "ConditionalCheckFailedException":
+                    print(e.response['Error']['Message'])
+                else:
+                    raise
+            else:
+                return response
+
+    def increase_rating(self, category, title, rating_increase):
+            response = client_dynamodb.update_item(
                 TableName='TableOfBooks',
                 Key={
                     'category': {
-                        'N': "{}".format(category),
+                        'S': category,
                     },
                     'title': {
-                        'S': "{}".format(title),
+                        'S': title,
                     }
                 },
-                ConditionExpression="rating <= :a",
+                ExpressionAttributeNames={
+                    '#R': 'rating'
+                },
                 ExpressionAttributeValues={
-                    ':a': {
-                        'N': "{}".format(rating),
+                    ':r': {
+                        'N': rating_increase,
                     }
-                }
+                },
+                UpdateExpression='SET #R = #R + :r',
+                ReturnValues="UPDATED_NEW"
             )
-        except ClientError as e:
-            if e.response['Error']['Code'] == "ConditionalCheckFailedException":
-                print(e.response['Error']['Message'])
-            else:
-                raise
-        else:
+            print("rating increased")
             return response
 
-def increase_rating(category, title, rating_increase):
-        response = client_dynamodb.update_item(
-            TableName='TableOfBooks',
-            Key={
-                'category': {
-                    'S': category,
-                },
-                'title': {
-                    'S': title,
-                }
-            },
-            ExpressionAttributeNames={
-                '#R': 'rating'
-            },
-            ExpressionAttributeValues={
-                ':r': {
-                    'N': rating_increase,
-                }
-            },
-            UpdateExpression='SET #R = #R + :r',
-            ReturnValues="UPDATED_NEW"
-        )
-        print("rating increased")
-        return response
