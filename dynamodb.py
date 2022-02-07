@@ -1,26 +1,28 @@
 import boto3
 from botocore.exceptions import ClientError
 
-client_dynamodb =boto3.client('dynamodb','ap-south-1')
+client_dynamodb = boto3.client('dynamodb', 'ap-south-1')
+
 
 class Book:
 
-    def put_item(self, category, title, language, ):
+    def put_item(self, category, title, language, year):
         response = client_dynamodb.put_item(
-            TableName='Books',
+            TableName='TableOfBooks',
             Item={
                 'category': {
-                    'N': category
+                    'S': category
                     ,
                 },
                 'title': {
                     'S': title,
                 },
                 'language': {
-                    'S': language
+                    'S': language,
                 },
-
-
+                'year': {
+                    'N': year,
+                }
 
             }
         )
@@ -28,10 +30,10 @@ class Book:
         return response
 
 
-    def get_item(self, category, title):
+    def get_item( self, category, title):
         try:
             response = client_dynamodb.get_item(
-                TableName='Books',
+                TableName='TableOfBooks',
                 Key={
                     'category': {
                         'S': category,
@@ -45,12 +47,11 @@ class Book:
         except ClientError as e:
             print(e.response['Error']['Message'])
         else:
-            return response['Item']
+            print(response['Item'])
 
-
-    def update_book(self, category, title, language, rating):
+    def update_book(self,category, title, language, year, rating):
         response = client_dynamodb.update_item(
-
+            TableName='Tableofbooks',
             Key={
                 'category': {
                     'S': category,
@@ -59,47 +60,31 @@ class Book:
                     'S': title,
                 }
             },
-
-            UpdateExpression="set language=:l, rating=:r",
-            ExpressionAttributeValues={
-                ':l': language,
-                ':r': rating
+            ExpressionAttributeNames={
+                '#L': 'language',
+                '#Y': 'year',
+                '#R': 'rating'
             },
+            ExpressionAttributeValues={
+                ':l': {
+                    'S': language,
+                },
+                ':y': {
+                    'N': year,
+                },
+                ':r': {
+                    'N': rating,
+                }
+            },
+            UpdateExpression='SET #L = :l, #Y = :y, #R= :r',
             ReturnValues="UPDATED_NEW"
         )
         return response
 
-
-    def delete_underrated_book(self, title, category, rating):
-            try:
-                response = client_dynamodb.delete_item(
-                    TableName='TableOfBooks',
-                    Key={
-                        'category': {
-                            'N': "{}".format(category),
-                        },
-                        'title': {
-                            'S': "{}".format(title),
-                        }
-                    },
-                    ConditionExpression="rating <= :a",
-                    ExpressionAttributeValues={
-                        ':a': {
-                            'N': "{}".format(rating),
-                        }
-                    }
-                )
-            except ClientError as e:
-                if e.response['Error']['Code'] == "ConditionalCheckFailedException":
-                    print(e.response['Error']['Message'])
-                else:
-                    raise
-            else:
-                return response
-
-    def increase_rating(self, category, title, rating_increase):
-            response = client_dynamodb.update_item(
-                TableName='TableOfBooks',
+    def delete_underratedbook(self, category, title, rating):
+        try:
+            response = client_dynamodb.delete_item(
+                TableName='Tableofbooks',
                 Key={
                     'category': {
                         'S': category,
@@ -108,26 +93,46 @@ class Book:
                         'S': title,
                     }
                 },
-                ExpressionAttributeNames={
-                    '#R': 'rating'
-                },
+                ConditionExpression="rating <= :a",
                 ExpressionAttributeValues={
-                    ':r': {
-                        'N': rating_increase,
+                    ':a': {
+                        'N': rating,
                     }
-                },
-                UpdateExpression='SET #R = #R + :r',
-                ReturnValues="UPDATED_NEW"
+                }
             )
-            print("rating increased")
+        except ClientError as e:
+            if e.response['Error']['Code'] == "ConditionalCheckFailedException":
+                print(e.response['Error']['Message'])
+            else:
+                raise
+        else:
             return response
 
-    # response = client_dynamodb.batch_write_item(
-    #     RequestItems={
-    #         'string': [
-    #             {
-    #                 'PutRequest': {
-    #                     'Item': {
-    #                         'string': {
-    #                             'S': '',
-    #                             'N':
+    def increase_rating(self, category, title, rating_increase):
+        response = client_dynamodb.update_item(
+            TableName='Tableofbooks',
+            Key={
+                'category': {
+                    'S': category,
+                },
+                'title': {
+                    'S': title,
+                }
+            },
+            ExpressionAttributeNames={
+                '#R': 'rating'
+            },
+            ExpressionAttributeValues={
+                ':r': {
+                    'N': rating_increase,
+                }
+            },
+            UpdateExpression='SET #R = #R + :r',
+            ReturnValues="UPDATED_NEW"
+        )
+        print("Rating increase")
+        return response
+
+
+    # Batch Crud operation
+

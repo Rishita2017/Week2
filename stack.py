@@ -16,6 +16,12 @@ class Stack:
                 Capabilities=['CAPABILITY_NAMED_IAM']
 
             )
+            waiter = self.client_cloudformation.get_waiter('stack_create_complete')
+            waiter.wait(StackName=self.stack_name, WaiterConfig={
+                'Delay': 2,
+                'MaxAttemtps': 5
+            })
+            print("Stack is created")
         except ClientError as ce:
             print(ce)
     def update_stack(self):
