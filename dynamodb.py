@@ -5,12 +5,12 @@ client_dynamodb =boto3.client('dynamodb','ap-south-1')
 
 class Book:
 
-    def put_item(self, year, title, language, ):
+    def put_item(self, category, title, language, ):
         response = client_dynamodb.put_item(
             TableName='Books',
             Item={
-                'year': {
-                    'N': year
+                'category': {
+                    'N': category
                     ,
                 },
                 'title': {
@@ -122,3 +122,12 @@ class Book:
             print("rating increased")
             return response
 
+    # response = client_dynamodb.batch_write_item(
+    #     RequestItems={
+    #         'string': [
+    #             {
+    #                 'PutRequest': {
+    #                     'Item': {
+    #                         'string': {
+    #                             'S': '',
+    #                             'N':
