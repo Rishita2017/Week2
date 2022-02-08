@@ -21,7 +21,7 @@ class Stack:
                 'Delay': 2,
                 'MaxAttemtps': 5
             })
-            print("Stack is created")
+            print("Stack is created...............")
         except ClientError as ce:
             print(ce)
     def update_stack(self):
@@ -34,6 +34,6 @@ class Stack:
             )
         except ClientError as ce:
             if ce.response['Error']['Code'] == 'ValidationError':
-                print("Stack Already Updated")
+                print("Stack Already Updated..................")
             else:
                 print(ce)

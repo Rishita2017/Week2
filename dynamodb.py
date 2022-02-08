@@ -1,6 +1,5 @@
 import boto3
 from botocore.exceptions import ClientError
-
 client_dynamodb = boto3.client('dynamodb', 'ap-south-1')
 
 
@@ -8,7 +7,7 @@ class Book:
 
     def put_item(self, category, title, language, year):
         response = client_dynamodb.put_item(
-            TableName='TableOfBooks',
+            TableName='Tableofbooks',
             Item={
                 'category': {
                     'S': category
@@ -33,7 +32,7 @@ class Book:
     def get_item( self, category, title):
         try:
             response = client_dynamodb.get_item(
-                TableName='TableOfBooks',
+                TableName='Tableofbooks',
                 Key={
                     'category': {
                         'S': category,
@@ -134,5 +133,30 @@ class Book:
         return response
 
 
-    # Batch Crud operation
-
+       # Batch Crud operation
+    def batch_write_item(self,category,title,year,language):
+        response = client_dynamodb.batch_write_item(
+            RequestItems={
+                'Tableofbooks': [
+                    {
+                        'PutRequest': {
+                            'Item': {
+                                'category': {
+                                    'S': category,
+                                },
+                                'title': {
+                                    'S': title,
+                                },
+                                'year': {
+                                    'N': year,
+                                },
+                                'language': {
+                                    'S': language,
+                                },
+                            },
+                        },
+                    },
+                ],
+            },
+        )
+        print(response)
