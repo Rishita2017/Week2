@@ -1,26 +1,27 @@
 import boto3
 from botocore.exceptions import ClientError
+client_dynamodb = boto3.client('dynamodb', 'ap-south-1')
 
-client_dynamodb =boto3.client('dynamodb','ap-south-1')
 
 class Book:
 
-    def put_item(self, year, title, language, ):
+    def put_item(self, category, title, language, year):
         response = client_dynamodb.put_item(
-            TableName='Books',
+            TableName='Tableofbooks',
             Item={
-                'year': {
-                    'N': year
+                'category': {
+                    'S': category
                     ,
                 },
                 'title': {
                     'S': title,
                 },
                 'language': {
-                    'S': language
+                    'S': language,
                 },
-
-
+                'year': {
+                    'N': year,
+                }
 
             }
         )
@@ -31,7 +32,7 @@ class Book:
     def get_item( self, category, title):
         try:
             response = client_dynamodb.get_item(
-                TableName='Books',
+                TableName='Tableofbooks',
                 Key={
                     'category': {
                         'S': category,
@@ -45,12 +46,11 @@ class Book:
         except ClientError as e:
             print(e.response['Error']['Message'])
         else:
-            return response['Item']
+            print(response['Item'])
 
-
-    def update_book(self, category, title, language, rating):
+    def update_book(self,category, title, language, year, rating):
         response = client_dynamodb.update_item(
-
+            TableName='Tableofbooks',
             Key={
                 'category': {
                     'S': category,
@@ -59,33 +59,43 @@ class Book:
                     'S': title,
                 }
             },
-
-            UpdateExpression="set language=:l, rating=:r",
-            ExpressionAttributeValues={
-                ':l': language,
-                ':r': rating
+            ExpressionAttributeNames={
+                '#L': 'language',
+                '#Y': 'year',
+                '#R': 'rating'
             },
+            ExpressionAttributeValues={
+                ':l': {
+                    'S': language,
+                },
+                ':y': {
+                    'N': year,
+                },
+                ':r': {
+                    'N': rating,
+                }
+            },
+            UpdateExpression='SET #L = :l, #Y = :y, #R= :r',
             ReturnValues="UPDATED_NEW"
         )
         return response
 
-
-def delete_underrated_book(title, category, rating):
+    def delete_underratedbook(self, category, title, rating):
         try:
             response = client_dynamodb.delete_item(
-                TableName='TableOfBooks',
+                TableName='Tableofbooks',
                 Key={
                     'category': {
-                        'N': "{}".format(category),
+                        'S': category,
                     },
                     'title': {
-                        'S': "{}".format(title),
+                        'S': title,
                     }
                 },
                 ConditionExpression="rating <= :a",
                 ExpressionAttributeValues={
                     ':a': {
-                        'N': "{}".format(rating),
+                        'N': rating,
                     }
                 }
             )
@@ -97,9 +107,9 @@ def delete_underrated_book(title, category, rating):
         else:
             return response
 
-   def increase_rating( self, category, title, rating_increase):
+    def increase_rating(self, category, title, rating_increase):
         response = client_dynamodb.update_item(
-            TableName='TableOfBooks',
+            TableName='Tableofbooks',
             Key={
                 'category': {
                     'S': category,
@@ -119,5 +129,34 @@ def delete_underrated_book(title, category, rating):
             UpdateExpression='SET #R = #R + :r',
             ReturnValues="UPDATED_NEW"
         )
+        print("Rating increase")
         return response
-        
+
+
+       # Batch Crud operation
+    def batch_write_item(self,category,title,year,language):
+        response = client_dynamodb.batch_write_item(
+            RequestItems={
+                'Tableofbooks': [
+                    {
+                        'PutRequest': {
+                            'Item': {
+                                'category': {
+                                    'S': category,
+                                },
+                                'title': {
+                                    'S': title,
+                                },
+                                'year': {
+                                    'N': year,
+                                },
+                                'language': {
+                                    'S': language,
+                                },
+                            },
+                        },
+                    },
+                ],
+            },
+        )
+        print(response)
